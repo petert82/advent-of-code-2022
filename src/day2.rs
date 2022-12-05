@@ -59,21 +59,25 @@ impl Shape {
     }
 }
 
-fn shape_from_char(input: char) -> Result<Shape, String> {
-    match input {
-        'A' | 'X' => Ok(Shape::Rock),
-        'B' | 'Y' => Ok(Shape::Paper),
-        'C' | 'Z' => Ok(Shape::Scissors),
-        _ => Err(format!("cannot convert {} to a Rock/Paper/Scissors", input)),
+impl TryFrom<char> for Shape {
+    type Error = String;
+
+    fn try_from(input: char) -> Result<Self, Self::Error> {
+        match input {
+            'A' | 'X' => Ok(Shape::Rock),
+            'B' | 'Y' => Ok(Shape::Paper),
+            'C' | 'Z' => Ok(Shape::Scissors),
+            _ => Err(format!("cannot convert {} to a Rock/Paper/Scissors", input)),
+        }
     }
 }
 
 fn opponent_shape(input: &str) -> IResult<&str, Shape> {
-    map_res(one_of("ABC"), shape_from_char)(input)
+    map_res(one_of("ABC"), Shape::try_from)(input)
 }
 
 fn player_shape(input: &str) -> IResult<&str, Shape> {
-    map_res(one_of("XYZ"), shape_from_char)(input)
+    map_res(one_of("XYZ"), Shape::try_from)(input)
 }
 
 fn parse_play(input: &str) -> IResult<&str, Play> {
