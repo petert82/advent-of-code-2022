@@ -253,4 +253,10 @@ mod test {
             ))
         );
     }
+
+    #[test]
+    fn test_part2_gives_correct_answer() {
+        let res = part2(INPUT).unwrap();
+        assert_eq!(res, "12".to_string());
+    }
 }
