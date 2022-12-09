@@ -17,6 +17,7 @@ impl Puzzle {
             (2, 1) => crate::day2::part1(input.as_ref()),
             (2, 2) => crate::day2::part2(input.as_ref()),
             (3, 1) => crate::day3::part1(input.as_ref()),
+            (3, 2) => crate::day3::part2(input.as_ref()),
             _ => bail!("day {} part {} is not implemented", self.day, self.part),
         }
     }
