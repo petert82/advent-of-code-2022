@@ -40,12 +40,17 @@ fn number(digits: &str) -> IResult<&str, usize> {
     map_res(digit1, |n: &str| n.parse::<usize>())(digits)
 }
 
+fn range_inclusive(input: &str) -> IResult<&str, RangeInclusive<usize>> {
+    let (rest, (start, end)) = separated_pair(number, tag("-"), number)(input)?;
+    Ok((rest, (start..=end)))
+}
+
 fn parse_line(line: &str) -> IResult<&str, (RangeInclusive<usize>, RangeInclusive<usize>)> {
-    let (rest, (x, y)) = separated_pair(number, tag("-"), number)(line)?;
-    let (rest, (a, b)) = preceded(tag(","), separated_pair(number, tag("-"), number))(rest)?;
+    let (rest, range1) = range_inclusive(line)?;
+    let (rest, range2) = preceded(tag(","), range_inclusive)(rest)?;
     let (rest, _) = opt(line_ending)(rest)?;
 
-    Ok((rest, (x..=y, a..=b)))
+    Ok((rest, (range1, range2)))
 }
 
 fn parse_lines(lines: &str) -> Result<Vec<(RangeInclusive<usize>, RangeInclusive<usize>)>> {
