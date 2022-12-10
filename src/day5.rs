@@ -20,31 +20,28 @@ pub fn part1(input: &str) -> Result<String> {
 
 struct GameState {
     stacks: Stacks,
-    commands: Vec<Command>,
-}
-
-impl GameState {
-    fn execute_part1(mut self) -> Stacks {
-        for command in self.commands.iter() {
-            match command {
-                Command::Move(num, from, to) => {
-                    for _ in 0..*num {
-                        let val = self.stacks[from - 1].pop().unwrap();
-                        self.stacks[to - 1].push(val);
-                    }
-                }
-            }
-        }
-        self.stacks
-    }
+    moves: Vec<Move>,
 }
 
 type Stacks = Vec<Vec<char>>;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum Command {
-    /// amount, from, to
-    Move(usize, usize, usize),
+struct Move {
+    num: usize,
+    from: usize,
+    to: usize,
+}
+
+impl GameState {
+    fn execute_part1(mut self) -> Stacks {
+        for Move { num, from, to } in self.moves.iter() {
+            for _ in 0..*num {
+                let val = self.stacks[from - 1].pop().unwrap();
+                self.stacks[to - 1].push(val);
+            }
+        }
+        self.stacks
+    }
 }
 
 impl TryFrom<&str> for GameState {
@@ -56,7 +53,7 @@ impl TryFrom<&str> for GameState {
         };
         Ok(GameState {
             stacks: parse_stacks(input_stacks)?,
-            commands: parse_commands(input_moves)?,
+            moves: parse_moves(input_moves)?,
         })
     }
 }
@@ -94,7 +91,7 @@ fn number(digits: &str) -> IResult<&str, usize> {
     map_res(digit1, |n: &str| n.parse::<usize>())(digits)
 }
 
-fn command(input: &str) -> IResult<&str, Command> {
+fn parse_move(input: &str) -> IResult<&str, Move> {
     let (rest, (_, num, _, from, _, to)) = tuple((
         tag("move "),
         number,
@@ -105,17 +102,17 @@ fn command(input: &str) -> IResult<&str, Command> {
     ))(input)?;
     let (rest, _) = opt(line_ending)(rest)?;
 
-    Ok((rest, Command::Move(num, from, to)))
+    Ok((rest, Move { num, from, to }))
 }
 
-fn parse_commands(input: &str) -> Result<Vec<Command>> {
-    let Ok((rest, commands)) = many0(command)(input) else {
-        bail!("failed to parse commands");
+fn parse_moves(input: &str) -> Result<Vec<Move>> {
+    let Ok((rest, moves)) = many0(parse_move)(input) else {
+        bail!("Failed to parse moves");
     };
     if !rest.is_empty() {
         bail!("Input contained unexpected extra content: {:?}", rest);
     }
-    Ok(commands)
+    Ok(moves)
 }
 
 #[cfg(test)]
@@ -143,15 +140,31 @@ move 1 from 1 to 2";
     }
 
     #[test]
-    fn test_can_parse_commands() {
-        let (_, cmds_input) = INPUT.split_once("\n\n").unwrap();
+    fn test_can_parse_moves() {
+        let (_, moves_input) = INPUT.split_once("\n\n").unwrap();
         let expect = vec![
-            Command::Move(1, 2, 1),
-            Command::Move(3, 1, 3),
-            Command::Move(2, 2, 1),
-            Command::Move(1, 1, 2),
+            Move {
+                num: 1,
+                from: 2,
+                to: 1,
+            },
+            Move {
+                num: 3,
+                from: 1,
+                to: 3,
+            },
+            Move {
+                num: 2,
+                from: 2,
+                to: 1,
+            },
+            Move {
+                num: 1,
+                from: 1,
+                to: 2,
+            },
         ];
-        assert_eq!(parse_commands(cmds_input).unwrap(), expect);
+        assert_eq!(parse_moves(moves_input).unwrap(), expect);
     }
 
     #[test]
