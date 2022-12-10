@@ -10,12 +10,26 @@ use nom::{
 
 pub fn part1(input: &str) -> Result<String> {
     let state = GameState::try_from(input)?;
-    let mut stacks = state.execute_part1();
+    let stacks = state.execute_part1();
+    Ok(stacks_to_result(stacks))
+}
+
+pub fn part2(input: &str) -> Result<String> {
+    let state = GameState::try_from(input)?;
+    let stacks = state.execute_part2();
+    Ok(stacks_to_result(stacks))
+}
+
+fn stacks_to_result(mut stacks: Stacks) -> String {
     let mut res = String::with_capacity(stacks.len());
     for stack in stacks.iter_mut() {
-        res.push(stack.pop().unwrap());
+        res.push(
+            stack
+                .pop()
+                .expect("not all stacks in the end state contained crates"),
+        );
     }
-    Ok(res)
+    res
 }
 
 struct GameState {
@@ -39,6 +53,15 @@ impl GameState {
                 let val = self.stacks[from - 1].pop().unwrap();
                 self.stacks[to - 1].push(val);
             }
+        }
+        self.stacks
+    }
+
+    fn execute_part2(mut self) -> Stacks {
+        for Move { num, from, to } in self.moves.iter() {
+            let split_idx = self.stacks[from - 1].len() - num;
+            let mut to_move = self.stacks[from - 1].split_off(split_idx);
+            self.stacks[to - 1].append(&mut to_move);
         }
         self.stacks
     }
@@ -170,5 +193,10 @@ move 1 from 1 to 2";
     #[test]
     fn test_part1_gives_correct_answer() {
         assert_eq!(part1(INPUT).unwrap(), "CMZ".to_string());
+    }
+
+    #[test]
+    fn test_part2_gives_correct_answer() {
+        assert_eq!(part2(INPUT).unwrap(), "MCD".to_string());
     }
 }
