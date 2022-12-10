@@ -10,7 +10,7 @@ use nom::{
     IResult,
 };
 
-pub fn part1(input: &str) -> Result<String> {
+pub fn part1(input: &str) -> Result<usize> {
     let input_ranges = parse_lines(input)?;
     let count = input_ranges
         .iter()
@@ -19,10 +19,10 @@ pub fn part1(input: &str) -> Result<String> {
                 || (r2.contains(r1.start()) && r2.contains(r1.end()))
         })
         .count();
-    Ok(format!("{}", count))
+    Ok(count)
 }
 
-pub fn part2(input: &str) -> Result<String> {
+pub fn part2(input: &str) -> Result<usize> {
     let input_ranges = parse_lines(input)?;
     let count = input_ranges
         .iter()
@@ -33,7 +33,7 @@ pub fn part2(input: &str) -> Result<String> {
                 || r2.contains(r1.end())
         })
         .count();
-    Ok(format!("{}", count))
+    Ok(count)
 }
 
 fn number(digits: &str) -> IResult<&str, usize> {
@@ -76,11 +76,11 @@ mod test {
 
     #[test]
     fn test_part1_gives_correct_answer() {
-        assert_eq!(part1(INPUT).unwrap(), "2".to_string());
+        assert_eq!(part1(INPUT).unwrap(), 2);
     }
 
     #[test]
     fn test_part2_gives_correct_answer() {
-        assert_eq!(part2(INPUT).unwrap(), "4".to_string());
+        assert_eq!(part2(INPUT).unwrap(), 4);
     }
 }

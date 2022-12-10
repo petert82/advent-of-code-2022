@@ -8,20 +8,20 @@ pub struct Puzzle {
 }
 
 impl Puzzle {
-    pub fn run(&self) -> Result<String> {
+    pub fn run(&self) -> Result<Box<dyn Display>> {
         let input_file = format!("./input/day{}.txt", self.day);
         let input = std::fs::read_to_string(input_file).context("could not read input file")?;
         match (self.day, self.part) {
-            (1, 1) => crate::day1::part1(input.as_ref()),
-            (1, 2) => crate::day1::part2(input.as_ref()),
-            (2, 1) => crate::day2::part1(input.as_ref()),
-            (2, 2) => crate::day2::part2(input.as_ref()),
-            (3, 1) => crate::day3::part1(input.as_ref()),
-            (3, 2) => crate::day3::part2(input.as_ref()),
-            (4, 1) => crate::day4::part1(input.as_ref()),
-            (4, 2) => crate::day4::part2(input.as_ref()),
-            (5, 1) => crate::day5::part1(input.as_ref()),
-            (5, 2) => crate::day5::part2(input.as_ref()),
+            (1, 1) => Ok(Box::new(crate::day1::part1(input.as_ref())?)),
+            (1, 2) => Ok(Box::new(crate::day1::part2(input.as_ref())?)),
+            (2, 1) => Ok(Box::new(crate::day2::part1(input.as_ref())?)),
+            (2, 2) => Ok(Box::new(crate::day2::part2(input.as_ref())?)),
+            (3, 1) => Ok(Box::new(crate::day3::part1(input.as_ref())?)),
+            (3, 2) => Ok(Box::new(crate::day3::part2(input.as_ref())?)),
+            (4, 1) => Ok(Box::new(crate::day4::part1(input.as_ref())?)),
+            (4, 2) => Ok(Box::new(crate::day4::part2(input.as_ref())?)),
+            (5, 1) => Ok(Box::new(crate::day5::part1(input.as_ref())?)),
+            (5, 2) => Ok(Box::new(crate::day5::part2(input.as_ref())?)),
             _ => bail!("day {} part {} is not implemented", self.day, self.part),
         }
     }

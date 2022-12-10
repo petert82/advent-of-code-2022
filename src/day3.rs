@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use anyhow::Result;
 
-pub fn part1(input: &str) -> Result<String> {
+pub fn part1(input: &str) -> Result<usize> {
     let sum = input
         .lines()
         .map(|l| {
@@ -16,7 +16,7 @@ pub fn part1(input: &str) -> Result<String> {
             priority(*in_both[0])
         })
         .sum::<usize>();
-    Ok(format!("{}", sum))
+    Ok(sum)
 }
 
 /// Gets the contents of the two "rucksack compartments"
@@ -26,7 +26,7 @@ fn partition_line(line: &str) -> (HashSet<char>, HashSet<char>) {
     (first.chars().collect(), second.chars().collect())
 }
 
-pub fn part2(input: &str) -> Result<String> {
+pub fn part2(input: &str) -> Result<usize> {
     let mut lines = input.lines();
 
     let mut sum: usize = 0;
@@ -52,7 +52,7 @@ pub fn part2(input: &str) -> Result<String> {
         sum += priority(*in_all[0]);
     }
 
-    Ok(format!("{}", sum))
+    Ok(sum)
 }
 
 fn priority(c: char) -> usize {
@@ -76,11 +76,11 @@ CrZsJsPPZsGzwwsLwLmpwMDw";
 
     #[test]
     fn test_part1_gives_correct_answer() {
-        assert_eq!(part1(INPUT).unwrap(), "157".to_string());
+        assert_eq!(part1(INPUT).unwrap(), 157);
     }
 
     #[test]
     fn test_part2_gives_correct_answer() {
-        assert_eq!(part2(INPUT).unwrap(), "70".to_string());
+        assert_eq!(part2(INPUT).unwrap(), 70);
     }
 }

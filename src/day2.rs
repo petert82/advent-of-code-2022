@@ -5,19 +5,19 @@ use nom::multi::many0;
 use nom::sequence::separated_pair;
 use nom::IResult;
 
-pub fn part1(input: &str) -> Result<String> {
+pub fn part1(input: &str) -> Result<usize> {
     if let Ok((_, plays)) = parse_part1_plays(input) {
-        let total_score = plays.iter().map(|play| play.score()).sum::<u32>();
-        Ok(format!("{}", total_score))
+        let total_score = plays.iter().map(|play| play.score()).sum::<usize>();
+        Ok(total_score)
     } else {
         bail!("could not parse input")
     }
 }
 
-pub fn part2(input: &str) -> Result<String> {
+pub fn part2(input: &str) -> Result<usize> {
     if let Ok((_, plays)) = parse_part2_plays(input) {
-        let total_score = plays.iter().map(|play| play.score()).sum::<u32>();
-        Ok(format!("{}", total_score))
+        let total_score = plays.iter().map(|play| play.score()).sum::<usize>();
+        Ok(total_score)
     } else {
         bail!("could not parse input")
     }
@@ -30,12 +30,12 @@ struct Play {
 }
 
 impl Play {
-    fn score(&self) -> u32 {
+    fn score(&self) -> usize {
         self.outcome_score() + self.response.score()
     }
 
     /// Score for just whether this was a win/lose/draw
-    fn outcome_score(&self) -> u32 {
+    fn outcome_score(&self) -> usize {
         // Draw
         if self.opponent_shape == self.response {
             return 3;
@@ -59,7 +59,7 @@ enum Shape {
 }
 
 impl Shape {
-    fn score(&self) -> u32 {
+    fn score(&self) -> usize {
         match self {
             Self::Rock => 1,
             Self::Paper => 2,
@@ -212,7 +212,7 @@ mod test {
     #[test]
     fn test_part1_gives_correct_answer() {
         let res = part1(INPUT).unwrap();
-        assert_eq!(res, "15".to_string());
+        assert_eq!(res, 15);
     }
 
     #[test]
@@ -257,6 +257,6 @@ mod test {
     #[test]
     fn test_part2_gives_correct_answer() {
         let res = part2(INPUT).unwrap();
-        assert_eq!(res, "12".to_string());
+        assert_eq!(res, 12);
     }
 }

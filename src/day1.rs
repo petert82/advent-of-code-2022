@@ -1,26 +1,29 @@
 use anyhow::Result;
 
-pub fn part1(input: &str) -> Result<String> {
+pub fn part1(input: &str) -> Result<usize> {
     let elf_calories = elf_calories(input);
     let highest_calories = elf_calories.iter().max().unwrap();
 
-    Ok(format!("{}", highest_calories))
+    Ok(*highest_calories)
 }
 
-pub fn part2(input: &str) -> Result<String> {
+pub fn part2(input: &str) -> Result<usize> {
     let mut elf_calories = elf_calories(input);
     elf_calories.sort();
     elf_calories.reverse();
-    let top3_elves_sum = elf_calories.iter().take(3).sum::<u32>();
+    let top3_elves_sum = elf_calories.iter().take(3).sum::<usize>();
 
-    Ok(format!("{}", top3_elves_sum))
+    Ok(top3_elves_sum)
 }
 
-fn elf_calories(input: &str) -> Vec<u32> {
+fn elf_calories(input: &str) -> Vec<usize> {
     input
         .split("\n\n")
         .map(|lines| {
-            let elf_calories: u32 = lines.lines().map(|line| line.parse::<u32>().unwrap()).sum();
+            let elf_calories = lines
+                .lines()
+                .map(|line| line.parse::<usize>().unwrap())
+                .sum();
             elf_calories
         })
         .collect()
@@ -48,12 +51,12 @@ mod test {
     #[test]
     fn test_part1_gives_correct_answer() {
         let res = part1(INPUT).unwrap();
-        assert_eq!(res, "24000".to_string());
+        assert_eq!(res, 24000);
     }
 
     #[test]
     fn test_part2_gives_correct_answer() {
         let res = part2(INPUT).unwrap();
-        assert_eq!(res, "45000".to_string());
+        assert_eq!(res, 45000);
     }
 }
