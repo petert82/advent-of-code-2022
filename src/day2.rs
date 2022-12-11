@@ -1,8 +1,8 @@
 use anyhow::{bail, Result};
 use nom::character::complete::{line_ending, one_of, space1};
-use nom::combinator::{map_res, opt};
-use nom::multi::many0;
-use nom::sequence::separated_pair;
+use nom::combinator::{all_consuming, map, map_res, opt};
+use nom::multi::separated_list1;
+use nom::sequence::{separated_pair, terminated};
 use nom::IResult;
 
 pub fn part1(input: &str) -> Result<usize> {
@@ -129,39 +129,37 @@ fn desired_result(input: &str) -> IResult<&str, DesiredResult> {
 }
 
 fn parse_part1_play(input: &str) -> IResult<&str, Play> {
-    let (input, (opponent_shape, response)) =
-        separated_pair(opponent_shape, space1, player_shape)(input)?;
-    let (input, _) = opt(line_ending)(input)?;
-
-    Ok((
-        input,
-        Play {
+    map(
+        separated_pair(opponent_shape, space1, player_shape),
+        |(opponent_shape, response)| Play {
             opponent_shape,
             response,
         },
-    ))
+    )(input)
 }
 
 fn parse_part1_plays(input: &str) -> IResult<&str, Vec<Play>> {
-    many0(parse_part1_play)(input)
+    all_consuming(terminated(
+        separated_list1(line_ending, parse_part1_play),
+        opt(line_ending),
+    ))(input)
 }
 
 fn parse_part2_play(input: &str) -> IResult<&str, Play> {
-    let (input, (opponent_shape, desired_result)) =
-        separated_pair(opponent_shape, space1, desired_result)(input)?;
-    let (input, _) = opt(line_ending)(input)?;
-
-    Ok((
-        input,
-        Play {
+    map(
+        separated_pair(opponent_shape, space1, desired_result),
+        |(opponent_shape, desired_result)| Play {
             opponent_shape,
             response: desired_result.get_response(opponent_shape),
         },
-    ))
+    )(input)
 }
 
 fn parse_part2_plays(input: &str) -> IResult<&str, Vec<Play>> {
-    many0(parse_part2_play)(input)
+    all_consuming(terminated(
+        separated_list1(line_ending, parse_part2_play),
+        opt(line_ending),
+    ))(input)
 }
 
 #[cfg(test)]
@@ -172,7 +170,7 @@ mod test {
 
     #[test]
     fn test_can_parse_a_single_line_for_part1() {
-        let input = "A Y\n";
+        let input = "A Y";
         assert_eq!(
             parse_part1_play(input),
             Ok((
@@ -217,7 +215,7 @@ mod test {
 
     #[test]
     fn test_can_parse_a_single_line_for_part2() {
-        let input = "A Y\n";
+        let input = "A Y";
         assert_eq!(
             parse_part2_play(input),
             Ok((
