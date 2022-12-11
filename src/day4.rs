@@ -4,9 +4,9 @@ use anyhow::{bail, Result};
 use nom::{
     bytes::complete::tag,
     character::complete::{digit1, line_ending},
-    combinator::{map_res, opt},
-    multi::many0,
-    sequence::{preceded, separated_pair},
+    combinator::{all_consuming, map, map_res, opt},
+    multi::separated_list1,
+    sequence::{separated_pair, terminated},
     IResult,
 };
 
@@ -41,25 +41,20 @@ fn number(digits: &str) -> IResult<&str, usize> {
 }
 
 fn range_inclusive(input: &str) -> IResult<&str, RangeInclusive<usize>> {
-    let (rest, (start, end)) = separated_pair(number, tag("-"), number)(input)?;
-    Ok((rest, (start..=end)))
+    map(separated_pair(number, tag("-"), number), |(start, end)| {
+        start..=end
+    })(input)
 }
 
 fn parse_line(line: &str) -> IResult<&str, (RangeInclusive<usize>, RangeInclusive<usize>)> {
-    let (rest, range1) = range_inclusive(line)?;
-    let (rest, range2) = preceded(tag(","), range_inclusive)(rest)?;
-    let (rest, _) = opt(line_ending)(rest)?;
-
-    Ok((rest, (range1, range2)))
+    separated_pair(range_inclusive, tag(","), range_inclusive)(line)
 }
 
 fn parse_lines(lines: &str) -> Result<Vec<(RangeInclusive<usize>, RangeInclusive<usize>)>> {
-    let Ok((rest, parsed)) = many0(parse_line)(lines) else {
+    let list = separated_list1(line_ending, parse_line);
+    let Ok((_rest, parsed)) = all_consuming(terminated(list, opt(line_ending)))(lines) else {
         bail!("Failed to parse input");
     };
-    if !rest.is_empty() {
-        bail!("Input contained unexpected extra content: {:?}", rest);
-    }
     Ok(parsed)
 }
 
