@@ -2,9 +2,9 @@ use anyhow::{bail, Result};
 use nom::{
     bytes::complete::tag,
     character::complete::{digit1, line_ending},
-    combinator::{map_res, opt},
-    multi::many0,
-    sequence::tuple,
+    combinator::{all_consuming, map, map_res, opt},
+    multi::separated_list1,
+    sequence::{preceded, terminated, tuple},
     IResult,
 };
 
@@ -72,7 +72,7 @@ impl TryFrom<&str> for GameState {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let Some((input_stacks, input_moves)) = value.split_once("\n\n") else {
-        bail!("expected input to contain a blank line between stacks and moves")
+            bail!("expected input to contain a blank line between stacks and moves")
         };
         Ok(GameState {
             stacks: parse_stacks(input_stacks)?,
@@ -115,26 +115,21 @@ fn number(digits: &str) -> IResult<&str, usize> {
 }
 
 fn parse_move(input: &str) -> IResult<&str, Move> {
-    let (rest, (_, num, _, from, _, to)) = tuple((
-        tag("move "),
-        number,
-        tag(" from "),
-        number,
-        tag(" to "),
-        number,
-    ))(input)?;
-    let (rest, _) = opt(line_ending)(rest)?;
-
-    Ok((rest, Move { num, from, to }))
+    map(
+        tuple((
+            preceded(tag("move "), number),
+            preceded(tag(" from "), number),
+            preceded(tag(" to "), number),
+        )),
+        |(num, from, to)| Move { num, from, to },
+    )(input)
 }
 
 fn parse_moves(input: &str) -> Result<Vec<Move>> {
-    let Ok((rest, moves)) = many0(parse_move)(input) else {
+    let list = separated_list1(line_ending, parse_move);
+    let Ok((_rest, moves)) = all_consuming(terminated(list, opt(line_ending)))(input) else {
         bail!("Failed to parse moves");
     };
-    if !rest.is_empty() {
-        bail!("Input contained unexpected extra content: {:?}", rest);
-    }
     Ok(moves)
 }
 
