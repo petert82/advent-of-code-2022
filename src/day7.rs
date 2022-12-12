@@ -1,3 +1,5 @@
+use std::{collections::HashMap, fmt::Debug};
+
 use anyhow::{bail, Result};
 use nom::{
     branch::alt,
@@ -11,7 +13,85 @@ use nom::{
 
 pub fn part1(input: &str) -> Result<usize> {
     let commands = parse_command_list(input)?;
-    Ok(0)
+
+    let mut state = State {
+        working_dir: WorkingDir::new(),
+        sizes: HashMap::new(),
+    };
+
+    for cmd in commands {
+        state.apply(cmd);
+    }
+
+    let res = state.sizes.values().filter(|&size| *size <= 100000).sum();
+
+    Ok(res)
+}
+
+#[derive(Debug)]
+struct State {
+    working_dir: WorkingDir,
+    sizes: HashMap<String, usize>,
+}
+
+impl State {
+    fn apply(&mut self, cmd: Command) {
+        match cmd {
+            Command::CdUp => self.working_dir.cd_up(),
+            Command::CdInto(dir) => self.working_dir.cd_into(dir.as_ref()),
+            Command::Ls(DirListing(entries)) => {
+                let dir_size = entries
+                    .iter()
+                    .map(|entry| match entry {
+                        DirEntry::File(_, size) => *size,
+                        DirEntry::Dir(_) => 0,
+                    })
+                    .sum::<usize>();
+                for path in self.working_dir.tree_paths() {
+                    let size = self.sizes.entry(path).or_insert(0);
+                    *size += dir_size;
+                }
+            }
+        }
+    }
+}
+
+struct WorkingDir(Vec<String>);
+
+impl WorkingDir {
+    fn new() -> Self {
+        Self(Vec::new())
+    }
+
+    fn cd_into(&mut self, dir: &str) {
+        self.0.push(dir.to_owned());
+    }
+
+    fn cd_up(&mut self) {
+        self.0.pop();
+    }
+
+    /// Gets current path, plus all of its "parent" paths
+    fn tree_paths(&self) -> Vec<String> {
+        let mut paths = Vec::with_capacity(self.0.len());
+        if self.0.is_empty() {
+            return paths;
+        }
+        for i in 1..=self.0.len() {
+            paths.push(self.0[0..i].join("/"));
+        }
+        paths
+    }
+}
+
+impl Debug for WorkingDir {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.0.is_empty() {
+            return write!(f, "/");
+        }
+        let dirs = self.0.join("/");
+        write!(f, "/{}", dirs)
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -31,12 +111,13 @@ enum DirEntry {
 struct DirListing(Vec<DirEntry>);
 
 fn command(i: &str) -> IResult<&str, Command> {
-    // $ cd ..
+    // "$ cd .."
     let cd_up = map(tag("$ cd .."), |_| Command::CdUp);
-    // $ cd fmfnpm
+    // "$ cd fmfnpm"
     let cd_into = map(preceded(tag("$ cd "), alpha1), |name: &str| {
         Command::CdInto(name.into())
     });
+    // "$ ls"
     let ls = map(
         preceded(tuple((tag("$ ls"), line_ending)), dir_listing),
         Command::Ls,
@@ -62,12 +143,12 @@ fn number(i: &str) -> IResult<&str, usize> {
 }
 
 fn dir_entry(i: &str) -> IResult<&str, DirEntry> {
-    // 13445 b.txt
+    // "13445 b.txt"
     let file = map(
         separated_pair(number, tag(" "), not_line_ending),
         |(size, name)| DirEntry::File(name.to_owned(), size),
     );
-    // dir dassfsdf
+    // "dir dassfsdf"
     let dir = map(preceded(tag("dir "), alpha1), |name: &str| {
         DirEntry::Dir(name.to_owned())
     });
