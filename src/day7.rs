@@ -13,19 +13,31 @@ use nom::{
 
 pub fn part1(input: &str) -> Result<usize> {
     let commands = parse_command_list(input)?;
-
-    let mut state = State {
-        working_dir: WorkingDir::new(),
-        sizes: HashMap::new(),
-    };
-
-    for cmd in commands {
-        state.apply(cmd);
-    }
+    let state = State::from_commands(commands);
 
     let res = state.sizes.values().filter(|&size| *size <= 100000).sum();
 
     Ok(res)
+}
+
+pub fn part2(input: &str) -> Result<usize> {
+    const TOTAL_SPACE: usize = 70000000;
+    const NEED_FREE: usize = 30000000;
+
+    let commands = parse_command_list(input)?;
+    let state = State::from_commands(commands);
+
+    let free = TOTAL_SPACE - state.used_space();
+    let need = NEED_FREE - free;
+    let mut candidates = state
+        .sizes
+        .values()
+        .filter(|&size| *size >= need)
+        .collect::<Vec<_>>();
+    assert!(!candidates.is_empty());
+    candidates.sort();
+
+    Ok(*candidates[0])
 }
 
 #[derive(Debug)]
@@ -35,6 +47,15 @@ struct State {
 }
 
 impl State {
+    fn from_commands(cmds: Vec<Command>) -> Self {
+        let mut state = Self {
+            working_dir: WorkingDir::new(),
+            sizes: HashMap::new(),
+        };
+        state.apply_all(cmds);
+        state
+    }
+
     fn apply(&mut self, cmd: Command) {
         match cmd {
             Command::CdUp => self.working_dir.cd_up(),
@@ -53,6 +74,16 @@ impl State {
                 }
             }
         }
+    }
+
+    fn apply_all(&mut self, cmds: Vec<Command>) {
+        for cmd in cmds {
+            self.apply(cmd);
+        }
+    }
+
+    fn used_space(&self) -> usize {
+        *self.sizes.get("/".into()).unwrap_or(&0)
     }
 }
 
@@ -73,7 +104,9 @@ impl WorkingDir {
 
     /// Gets current path, plus all of its "parent" paths
     fn tree_paths(&self) -> Vec<String> {
-        let mut paths = Vec::with_capacity(self.0.len());
+        let mut paths = Vec::with_capacity(self.0.len() + 1);
+        paths.push("/".into());
+
         if self.0.is_empty() {
             return paths;
         }
@@ -237,5 +270,10 @@ $ ls
     #[test]
     fn test_part_1_gives_correct_answer() {
         assert_eq!(part1(INPUT).unwrap(), 95437);
+    }
+
+    #[test]
+    fn test_part_2_gives_correct_answer() {
+        assert_eq!(part2(INPUT).unwrap(), 24933642);
     }
 }
