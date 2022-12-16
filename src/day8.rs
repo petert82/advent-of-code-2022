@@ -3,8 +3,62 @@ use std::collections::HashMap;
 use anyhow::Result;
 
 pub fn part1(input: &str) -> Result<usize> {
-    let mut visibilities: HashMap<(usize, usize), bool> = HashMap::new();
-    let mut heights = input
+    let (mut visibilities, mut heights) = build_grid(input, false);
+
+    for row in heights.iter() {
+        process_row_part1(row.iter(), &mut visibilities);
+        process_row_part1(row.iter().rev(), &mut visibilities);
+    }
+
+    heights.reverse();
+    let heights = transpose(heights);
+
+    for row in heights.iter() {
+        process_row_part1(row.iter(), &mut visibilities);
+        process_row_part1(row.iter().rev(), &mut visibilities);
+    }
+
+    let visible_count = visibilities.values().filter(|v| *v == &true).count();
+
+    Ok(visible_count)
+}
+
+pub fn part2(input: &str) -> Result<usize> {
+    let (mut visibilities, mut heights) = build_grid(input, 1 as usize);
+
+    for row in heights.iter() {
+        process_row_part2(row.iter(), &mut visibilities);
+        process_row_part2(row.iter().rev(), &mut visibilities);
+    }
+
+    heights.reverse();
+    let heights = transpose(heights);
+
+    for row in heights.iter() {
+        process_row_part2(row.iter(), &mut visibilities);
+        process_row_part2(row.iter().rev(), &mut visibilities);
+    }
+
+    let max_scenic_score = *visibilities
+        .values()
+        .max()
+        .expect("there should be at least one scenic score");
+
+    Ok(max_scenic_score)
+}
+
+fn build_grid<T>(
+    input: &str,
+    default_visibility: T,
+) -> (
+    HashMap<(usize, usize), T>,
+    Vec<Vec<((usize, usize), usize)>>,
+)
+where
+    T: Copy,
+{
+    let mut visibilities: HashMap<(usize, usize), _> = HashMap::new();
+    let heights = input
         .lines()
         .enumerate()
         .map(|(y, line)| {
@@ -13,32 +67,16 @@ pub fn part1(input: &str) -> Result<usize> {
                 .flatten()
                 .enumerate()
                 .map(|(x, height)| {
-                    visibilities.insert((x, y), false);
+                    visibilities.insert((x, y), default_visibility);
                     ((x, y), height as usize)
                 })
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
-
-    for row in heights.iter() {
-        process_row(row.iter(), &mut visibilities);
-        process_row(row.iter().rev(), &mut visibilities);
-    }
-
-    heights.reverse();
-    let heights = transpose(heights);
-
-    for row in heights.iter() {
-        process_row(row.iter(), &mut visibilities);
-        process_row(row.iter().rev(), &mut visibilities);
-    }
-
-    let visible_count = visibilities.values().filter(|v| *v == &true).count();
-
-    Ok(visible_count)
+    (visibilities, heights)
 }
 
-fn process_row<'a, I>(row: I, visibilities: &mut HashMap<(usize, usize), bool>)
+fn process_row_part1<'a, I>(row: I, visibilities: &mut HashMap<(usize, usize), bool>)
 where
     I: Iterator<Item = &'a ((usize, usize), usize)>,
 {
@@ -61,6 +99,36 @@ where
                 Some(t)
             }
         });
+    }
+}
+
+fn process_row_part2<'a, I>(row: I, visibilities: &mut HashMap<(usize, usize), usize>)
+where
+    I: Iterator<Item = &'a ((usize, usize), usize)>,
+{
+    let mut prev_heights: Vec<usize> = Vec::new();
+
+    for (i, ((x, y), height)) in row.enumerate() {
+        if prev_heights.is_empty() {
+            visibilities.entry((*x, *y)).and_modify(|vis| *vis *= 0);
+        } else {
+            // Find the index of the last tree we saw that was this tall or taller
+            let prev_idx = prev_heights
+                .iter()
+                .enumerate()
+                .filter(|(_, &v)| v >= *height)
+                .map(|(j, _)| j)
+                .last();
+            // Calculate the distance to that last tree
+            let run_length = match prev_idx {
+                None => prev_heights.len(),
+                Some(j) => i - j,
+            };
+            visibilities
+                .entry((*x, *y))
+                .and_modify(|vis| *vis *= run_length);
+        }
+        prev_heights.push(*height);
     }
 }
 
@@ -92,5 +160,11 @@ mod test {
     fn test_part1_gives_correct_answer() {
         let visible_trees = part1(INPUT).unwrap();
         assert_eq!(visible_trees, 21);
+    }
+
+    #[test]
+    fn test_part2_gives_correct_answer() {
+        let visible_trees = part2(INPUT).unwrap();
+        assert_eq!(visible_trees, 8);
     }
 }
